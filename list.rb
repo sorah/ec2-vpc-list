@@ -39,12 +39,12 @@ end
 pcxs_ts = regions.map do |region|
   Thread.new do
     ec2 = Aws::EC2::Resource.new(region: region)
-    [region, ec2.vpc_peering_connections(filters: [name: 'status-code', values: %w(active)]).map { |_| [_.id, _] }.to_h]
+    [region, ec2.vpc_peering_connections(filters: [name: 'status-code', values: %w(active)]).map { |_| [_.id, _] }.sort_by(&:first).to_h]
   end
 end
 
-@vpcs = vpcs_ts.flat_map(&:value).to_h
-@pcxs = pcxs_ts.map(&:value).to_h
+@vpcs = vpcs_ts.flat_map(&:value).sort_by(&:first).to_h
+@pcxs = pcxs_ts.map(&:value).sort_by(&:first).to_h
 
 @vpcs_by_region = @vpcs.group_by { |key, vpc|
   key.split(?/,2).first

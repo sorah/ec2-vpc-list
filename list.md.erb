@@ -1,0 +1,52 @@
+![](./graph.svg)
+
+[svg](./graph.svg), [png](./graph.png)
+
+<%- @vpcs_by_region.each_with_index do |(region, vpcs), idx| -%>
+## <%= region %>
+
+<%- vpcs.each do |key, vpc| -%>
+### `<%= vpc.id %>` <%= vpc_name(vpc) %>
+
+<%
+   peers = {}
+
+  (@pcxs_by_vpc[key] || []).each {|pcx|
+    is_accepter = pcx.accepter_vpc_info.region == region && pcx.accepter_vpc_info.vpc_id == vpc.id
+    peer_info = is_accepter ? pcx.requester_vpc_info : pcx.accepter_vpc_info
+    key2 = "#{peer_info.region}/#{peer_info.vpc_id}"
+
+    peers[key2] = {
+      status: is_accepter ? '<' : '>',
+      name: @vpcs[key2] ? vpc_name(@vpcs[key2]) : key2,
+      region: peer_info.region,
+      req_region: pcx.requester_vpc_info.region,
+      vpc_id: peer_info.vpc_id,
+      pcx_id: pcx.id,
+    }
+  }
+
+  @vpcs_by_region.each do |_region, _vpcs|
+    _vpcs.each do |key2, _vpc|
+      peers[key2] ||= {
+        status: nil,
+        name: vpc_name(_vpc),
+        region: _region,
+        vpc_id: _vpc.id,
+        pcx_id: nil,
+      }
+    end
+  end
+
+  peers = peers.values.sort_by {|_| [_[:status] ? 0 : 1, _[:name]] }
+%>
+
+|status|name|region|vpc_id|pcx_id|
+|--|--|--|--|--|
+<%- peers.each do |peer| -%>
+|<%= peer[:status] %>|<%= peer[:name] %>|<%= peer[:region] %>|<%= link_console_vpc(peer[:region], peer[:vpc_id]) %>|<%= peer[:pcx_id] && link_console_pcx(peer[:req_region], peer[:pcx_id]) %>|
+<%- end -%>
+
+<%- end -%>
+
+<%- end -%>

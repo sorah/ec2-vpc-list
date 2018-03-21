@@ -1,0 +1,32 @@
+digraph {
+  node [fontname="Monaco",fontsize=16];
+  graph [fontname="Monaco",fontsize=18];
+  edge [fontname="Monaco",fontsize=12];
+
+  <%- @vpcs_by_region.each_with_index do |(region, vpcs), idx| -%>
+    subgraph cluster_<%= idx + 1 %> {
+      label="<%= region %>"
+
+      <%- vpcs.each do |key, vpc| -%>
+        <%= dot_vpc_key(key) %> [label="<%= vpc_name(vpc) %>"];
+      <%- end -%>
+
+      <%- vpcs.each do |key, vpc| -%>
+        <%- (@pcxs_i_by_vpc[key] || []).select {|pcx| pcx.accepter_vpc_info.region == region }.each do |pcx| -%>
+          <%- key2 = "#{pcx.accepter_vpc_info.region}/#{pcx.accepter_vpc_info.vpc_id}" -%>
+          <%- unless @vpcs[key2] -%>
+            <%= dot_vpc_key(key2) %> [label="<%= pcx.accepter_vpc_info.owner_id %>/<%= pcx.accepter_vpc_info.vpc_id %>"];
+          <%- end -%>
+          <%= dot_vpc_key(key) %> -> <%= dot_vpc_key(key2) %> [label="<%= pcx.id %>"];
+        <%- end -%>
+      <%- end -%>
+    }
+
+    <%- vpcs.each do |key, vpc| -%>
+      <%- (@pcxs_i_by_vpc[key] || []).reject {|pcx| pcx.accepter_vpc_info.region == region }.each do |pcx| -%>
+        <%- key2 = "#{pcx.accepter_vpc_info.region}/#{pcx.accepter_vpc_info.vpc_id}" -%>
+        <%= dot_vpc_key(key) %> -> <%= dot_vpc_key(key2) %> [label="<%= pcx.id %>"];
+      <%- end -%>
+    <%- end -%>
+  <%- end -%>
+}

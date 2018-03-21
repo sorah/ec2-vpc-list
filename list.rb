@@ -53,12 +53,25 @@ end
 }.to_h
 
 @pcxs_i_by_vpc = @pcxs.each_value.inject({}) do |r, ps|
-  r.merge ps.each_value.group_by { |_| "#{_.requester_vpc_info.region}/#{_.requester_vpc_info.vpc_id}" }
-end
+  ps.each_value.group_by { |_| "#{_.requester_vpc_info.region}/#{_.requester_vpc_info.vpc_id}" }.each do |k,s|
+    (r[k] ||= {})
+    s.each do |pcx|
+      r[k][pcx.id] = pcx
+    end
+  end
+  r
+end.transform_values(&:values)
+
 
 @pcxs_r_by_vpc = @pcxs.each_value.inject({}) do |r, ps|
-  r.merge ps.each_value.group_by { |_| "#{_.accepter_vpc_info.region}/#{_.accepter_vpc_info.vpc_id}" }
-end
+  ps.each_value.group_by { |_| "#{_.accepter_vpc_info.region}/#{_.accepter_vpc_info.vpc_id}" }.each do |k,s|
+    (r[k] ||= {})
+    s.each do |pcx|
+      r[k][pcx.id] = pcx
+    end
+  end
+  r
+end.transform_values(&:values)
 
 @pcxs_by_vpc = {}.tap do |h|
   @pcxs_i_by_vpc.each do |key, s|
